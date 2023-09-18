@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "default_pmm.h": "c",
+        "best_fit_pmm.h": "c",
+        "slub_pmm.h": "c"
+    }
+}
