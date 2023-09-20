@@ -75,7 +75,7 @@ case CAUSE_BREAKPOINT:
     */
     cprintf("Exception type: breakpoint\n");
     cprintf("ebreak caught at 0x%08x\n", tf->epc);
-    tf->epc += 4;
+    tf->epc += 2; //这里由于ebreak占2个字节，所以下一条指令偏移为2
     break;
 ```
 
@@ -109,3 +109,9 @@ ebreak caught at 0x80200054
    * 实验中的进程恢复时，并未将所有寄存器的值予以恢复。正如拓展练习二中所提及的，这些寄存器的值将用来准确刻画发生的异常或中断并采取合适的方法处理它们。
    * OS原理中，并未提及该情况。
 3. 实验中未提及进程控制块PCB等知识点
+
+## 检测
+
+运行`make grade`之后输出如下
+
+![image-20230920231819733](./lab1.assets/image-20230920231819733.png)
