@@ -14,7 +14,6 @@ _lru_init_mm(struct mm_struct *mm)
 
     list_init(&pra_list_head);
     mm->sm_priv = &pra_list_head;
-
      //cprintf(" mm->sm_priv %x in fifo_init_mm\n",mm->sm_priv);
      return 0;
 }
@@ -26,8 +25,7 @@ _lru_map_swappable(struct mm_struct *mm, uintptr_t addr, struct Page *page, int 
     list_entry_t *entry=&(page->pra_page_link);
  
     assert(entry != NULL && head != NULL);
-    list_add_before((list_entry_t*) mm->sm_priv,entry);
-    page->visited = 0;
+    list_add((list_entry_t*) mm->sm_priv,entry);
     return 0;
 }
 static int
@@ -36,7 +34,13 @@ _lru_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tick)
      list_entry_t *head=(list_entry_t*) mm->sm_priv;
          assert(head != NULL);
      assert(in_tick==0);
-
+    list_entry_t* entry = list_prev(head);
+    if (entry != head) {
+        list_del(entry);
+        *ptr_page = le2page(entry, pra_page_link);
+    } else {
+        *ptr_page = NULL;
+    }
     return 0;
 }
 static int
