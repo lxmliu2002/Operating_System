@@ -50,6 +50,7 @@ bootstacktop:
 boot_page_table_sv39:
     # 0xffffffff_c0000000 map to 0x80000000 (1G)
     # 前 511 个页表项均设置为 0 ，因此 V=0 ，意味着是空的(unmapped)
-    .zero 8 * 511
+    .zero 8 * 511 # 使用 .zero 指令创建了511个 8 字节（64位）的空页表项。每个页表项表示一个虚拟页到物理页的映射
     # 设置最后一个页表项，PPN=0x80000，标志位 VRWXAD 均为 1
-    .quad (0x80000 << 10) | 0xcf # VRWXAD
+    .quad (0x80000 << 10) | 0xcf # VRWXAD 
+                                 # 将 0x80000 左移了10位。在 RISC-V 中，一个页表项的高20位用于存储物理页号（PPN），因此左移10位是为了将 0x80000 放置到正确的位置上

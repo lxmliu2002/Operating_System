@@ -10,7 +10,7 @@
 #define KERNTOP             (KERNBASE + KMEMSIZE) // 0x88000000对应的虚拟地址
 
 #define PHYSICAL_MEMORY_END         0x88000000
-#define PHYSICAL_MEMORY_OFFSET      0xFFFFFFFF40000000
+#define PHYSICAL_MEMORY_OFFSET      0xFFFFFFFF40000000 //物理地址和虚拟地址的偏移量
 #define KERNEL_BEGIN_PADDR          0x80200000
 #define KERNEL_BEGIN_VADDR          0xFFFFFFFFC0200000
 
@@ -28,21 +28,20 @@ typedef uintptr_t pte_t;
 typedef uintptr_t pde_t;
 
 /* *
- * struct Page - Page descriptor structures. Each Page describes one
- * physical page. In kern/mm/pmm.h, you can find lots of useful functions
- * that convert Page to other data types, such as physical address.
+ * struct Page - 页面描述结构体。每个 Page 结构描述一个物理页面。在 kern/mm/pmm.h 中，您可以找到许多有用的函数，用于将 Page 转换为其他数据类型，如物理地址。
  * */
 struct Page {
-    int ref;                        // page frame's reference counter
-    uint64_t flags;                 // array of flags that describe the status of the page frame
-    unsigned int property;          // the num of free block, used in first fit pm manager
-    list_entry_t page_link;         // free list link
+    int ref;                        // 页面帧的引用计数
+    uint64_t flags;                 // 描述页面帧状态的标志数组
+    unsigned int property;          // 自由块的数量，用于首次适配 pmm 管理器
+    list_entry_t page_link;         // 自由列表链接
 };
+
 
 /* Flags describing the status of a page frame */
 #define PG_reserved                 0       // if this bit=1: the Page is reserved for kernel, cannot be used in alloc/free_pages; otherwise, this bit=0 
 #define PG_property                 1       // if this bit=1: the Page is the head page of a free memory block(contains some continuous_addrress pages), and can be used in alloc_pages; if this bit=0: if the Page is the the head page of a free memory block, then this Page and the memory block is alloced. Or this Page isn't the head page.
-
+//这几个对page操作的宏用到了atomic.h的原子操作
 #define SetPageReserved(page)       set_bit(PG_reserved, &((page)->flags))
 #define ClearPageReserved(page)     clear_bit(PG_reserved, &((page)->flags))
 #define PageReserved(page)          test_bit(PG_reserved, &((page)->flags))

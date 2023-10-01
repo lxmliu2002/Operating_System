@@ -24,7 +24,7 @@ Special kernel symbols:
   entry  0xffffffffc0200036 (virtual)
   etext  0xffffffffc0201ad8 (virtual)
   edata  0xffffffffc0206010 (virtual)
-  end    0xffffffffc0206470 (virtual)
+  end    0xffffffffc0206560 (virtual)
 Kernel executable memory footprint: 26KB
 memory management: best_fit_pmm_manager
 physcial memory map:

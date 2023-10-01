@@ -22,34 +22,30 @@ static void print_ticks() {
 /* idt_init - initialize IDT to each of the entry points in kern/trap/vectors.S
  */
 void idt_init(void) {
-    /* LAB1 YOUR CODE : STEP 2 */
-    /* (1) Where are the entry addrs of each Interrupt Service Routine (ISR)?
-     *     All ISR's entry addrs are stored in __vectors. where is uintptr_t
-     * __vectors[] ?
-     *     __vectors[] is in kern/trap/vector.S which is produced by
-     * tools/vector.c
-     *     (try "make" command in lab1, then you will find vector.S in kern/trap
-     * DIR)
-     *     You can use  "extern uintptr_t __vectors[];" to define this extern
-     * variable which will be used later.
-     * (2) Now you should setup the entries of ISR in Interrupt Description
-     * Table (IDT).
-     *     Can you see idt[256] in this file? Yes, it's IDT! you can use SETGATE
-     * macro to setup each item of IDT
-     * (3) After setup the contents of IDT, you will let CPU know where is the
-     * IDT by using 'lidt' instruction.
-     *     You don't know the meaning of this instruction? just google it! and
-     * check the libs/x86.h to know more.
-     *     Notice: the argument of lidt is idt_pd. try to find it!
+    /* 实验1 你的代码：步骤2 */
+    /* (1) 每个中断服务例程 (ISR) 的入口地址在哪里？
+     *     所有的 ISR 入口地址都存储在 __vectors 中。__vectors 是一个 uintptr_t
+     *     数组。
+     *     __vectors[] 位于 kern/trap/vector.S 文件中，该文件是由 tools/vector.c 生成的。
+     *     （在实验1中尝试 "make" 命令，然后你将在 kern/trap 目录下找到 vector.S）
+     *     你可以使用 "extern uintptr_t __vectors[];" 来定义这个外部变量，以后会用到它。
+     * (2) 现在，你应该设置中断描述符表（IDT）中每个 ISR 的条目。
+     *     你能看到这个文件中的 idt[256] 吗？是的，它就是 IDT！
+     *     你可以使用 SETGATE 宏来设置 IDT 的每个条目。
+     * (3) 在设置 IDT 内容后，你需要使用 'lidt' 指令告诉 CPU IDT 的位置。
+     *     你不知道这个指令的含义吗？只需搜索一下！还可以查看 libs/x86.h 以了解更多信息。
+     *     注意：'lidt' 的参数是 idt_pd。尝试找到它！
      */
 
-    extern void __alltraps(void);
-    /* Set sup0 scratch register to 0, indicating to exception vector
-       that we are presently executing in the kernel */
-    write_csr(sscratch, 0);
-    /* Set the exception vector address */
-    write_csr(stvec, &__alltraps);
+    extern void __alltraps(void); //引入了一个外部定义的函数 __alltraps，这个函数是异常处理程序的入口点。
+                                  //在后面的步骤中，将配置中断描述符表（IDT）以将不同的中断或异常连接到这个入口点
+    /* 将 sup0 临时寄存器设置为0，表示在异常向量处理程序中我们当前正在内核模式下执行 */
+    write_csr(sscratch, 0); //sscratch 寄存器通常用于指示异常向量处理程序当前是否在内核模式下执行
+    /* 设置异常向量地址 */
+    write_csr(stvec, &__alltraps); //这一行代码设置了 stvec 寄存器的值为 &__alltraps，即异常向量处理程序的入口地址。
+                                   //stvec 寄存器是处理异常时的跳转目标，当发生中断或异常时，处理器会跳转到 stvec 寄存器指定的地址。
 }
+
 
 /* trap_in_kernel - test if trap happened in kernel */
 bool trap_in_kernel(struct trapframe *tf) {

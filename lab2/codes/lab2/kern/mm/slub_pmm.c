@@ -1,10 +1,10 @@
-// #include <pmm.h>
-// #include <list.h>
-// #include <string.h>
-// #include <slub_pmm.h>
-// #include <stdio.h>
-// #include <buddy_system_pmm.h>
-// #include <mmu.h>
+#include <pmm.h>
+#include <list.h>
+#include <string.h>
+#include <slub_pmm.h>
+#include <stdio.h>
+#include <buddy_system_pmm.h>
+#include <mmu.h>
 
 // #define KMALLOC_MAX_CACHE_SIZE 2 * PGSIZE
 

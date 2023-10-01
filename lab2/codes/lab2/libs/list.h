@@ -5,14 +5,11 @@
 
 #include <defs.h>
 
-/* *
- * Simple doubly linked list implementation.
- *
- * Some of the internal functions ("__xxx") are useful when manipulating
- * whole lists rather than single entries, as sometimes we already know
- * the next/prev entries and we can generate better code by using them
- * directly rather than using the generic single-entry routines.
- * */
+/*
+ * 简单的双向链表实现。
+ * 一些内部函数（以 "__" 开头的函数）在操作整个链表而不是单个元素时很有用，
+ * 因为有时我们已经知道下一个/前一个元素，可以直接使用它们而不是使用通用的单个元素函数。
+*/
 
 struct list_entry {
     struct list_entry *prev, *next;
@@ -29,13 +26,13 @@ static inline void list_del_init(list_entry_t *listelm) __attribute__((always_in
 static inline bool list_empty(list_entry_t *list) __attribute__((always_inline));
 static inline list_entry_t *list_next(list_entry_t *listelm) __attribute__((always_inline));
 static inline list_entry_t *list_prev(list_entry_t *listelm) __attribute__((always_inline));
-
+//下面两个函数仅在内部使用， 不对外开放作为接口。
 static inline void __list_add(list_entry_t *elm, list_entry_t *prev, list_entry_t *next) __attribute__((always_inline));
 static inline void __list_del(list_entry_t *prev, list_entry_t *next) __attribute__((always_inline));
 
 /* *
- * list_init - initialize a new entry
- * @elm:        new entry to be initialized
+ * list_init - 初始化一个新的条目
+ * @elm:        要初始化的新条目
  * */
 static inline void
 list_init(list_entry_t *elm) {
@@ -43,12 +40,11 @@ list_init(list_entry_t *elm) {
 }
 
 /* *
- * list_add - add a new entry
- * @listelm:    list head to add after
- * @elm:        new entry to be added
+ * list_add - 添加一个新的条目
+ * @listelm:    要添加到之后的列表头
+ * @elm:        要添加的新条目
  *
- * Insert the new element @elm *after* the element @listelm which
- * is already in the list.
+ * 在已经在列表中的元素 @listelm 之后插入新元素 @elm。
  * */
 static inline void
 list_add(list_entry_t *listelm, list_entry_t *elm) {
@@ -56,12 +52,11 @@ list_add(list_entry_t *listelm, list_entry_t *elm) {
 }
 
 /* *
- * list_add_before - add a new entry
- * @listelm:    list head to add before
- * @elm:        new entry to be added
+ * list_add_before - 添加一个新的条目
+ * @listelm:    要添加到之前的列表头
+ * @elm:        要添加的新条目
  *
- * Insert the new element @elm *before* the element @listelm which
- * is already in the list.
+ * 在已经在列表中的元素 @listelm 之前插入新元素 @elm。
  * */
 static inline void
 list_add_before(list_entry_t *listelm, list_entry_t *elm) {
@@ -69,12 +64,11 @@ list_add_before(list_entry_t *listelm, list_entry_t *elm) {
 }
 
 /* *
- * list_add_after - add a new entry
- * @listelm:    list head to add after
- * @elm:        new entry to be added
+ * list_add_after - 添加一个新的条目
+ * @listelm:    要添加到之后的列表头
+ * @elm:        要添加的新条目
  *
- * Insert the new element @elm *after* the element @listelm which
- * is already in the list.
+ * 在已经在列表中的元素 @listelm 之后插入新元素 @elm。
  * */
 static inline void
 list_add_after(list_entry_t *listelm, list_entry_t *elm) {
@@ -82,11 +76,10 @@ list_add_after(list_entry_t *listelm, list_entry_t *elm) {
 }
 
 /* *
- * list_del - deletes entry from list
- * @listelm:    the element to delete from the list
+ * list_del - 从列表中删除条目
+ * @listelm:    要从列表中删除的元素
  *
- * Note: list_empty() on @listelm does not return true after this, the entry is
- * in an undefined state.
+ * 注意：在此之后，对 @listelm 的 list_empty() 不会返回 true，该条目处于未定义状态。
  * */
 static inline void
 list_del(list_entry_t *listelm) {
@@ -94,10 +87,10 @@ list_del(list_entry_t *listelm) {
 }
 
 /* *
- * list_del_init - deletes entry from list and reinitialize it.
- * @listelm:    the element to delete from the list.
+ * list_del_init - 从列表中删除条目并重新初始化
+ * @listelm:    要从列表中删除的元素。
  *
- * Note: list_empty() on @listelm returns true after this.
+ * 注意：在此之后，对 @listelm 的 list_empty() 将返回 true。
  * */
 static inline void
 list_del_init(list_entry_t *listelm) {
@@ -106,8 +99,8 @@ list_del_init(list_entry_t *listelm) {
 }
 
 /* *
- * list_empty - tests whether a list is empty
- * @list:       the list to test.
+ * list_empty - 测试列表是否为空
+ * @list:       要测试的列表
  * */
 static inline bool
 list_empty(list_entry_t *list) {
@@ -115,8 +108,8 @@ list_empty(list_entry_t *list) {
 }
 
 /* *
- * list_next - get the next entry
- * @listelm:    the list head
+ * list_next - 获取下一个条目
+ * @listelm:    列表头
  **/
 static inline list_entry_t *
 list_next(list_entry_t *listelm) {
@@ -124,8 +117,8 @@ list_next(list_entry_t *listelm) {
 }
 
 /* *
- * list_prev - get the previous entry
- * @listelm:    the list head
+ * list_prev - 获取前一个条目
+ * @listelm:    列表头
  **/
 static inline list_entry_t *
 list_prev(list_entry_t *listelm) {
@@ -133,10 +126,9 @@ list_prev(list_entry_t *listelm) {
 }
 
 /* *
- * Insert a new entry between two known consecutive entries.
+ * 在两个已知连续条目之间插入新条目。
  *
- * This is only for internal list manipulation where we know
- * the prev/next entries already!
+ * 这仅用于已知 prev/next 条目的内部列表操作！
  * */
 static inline void
 __list_add(list_entry_t *elm, list_entry_t *prev, list_entry_t *next) {
@@ -146,10 +138,9 @@ __list_add(list_entry_t *elm, list_entry_t *prev, list_entry_t *next) {
 }
 
 /* *
- * Delete a list entry by making the prev/next entries point to each other.
+ * 通过使 prev/next 条目相互指向对方来删除列表条目。
  *
- * This is only for internal list manipulation where we know
- * the prev/next entries already!
+ * 这仅用于已知 prev/next 条目的内部列表操作！
  * */
 static inline void
 __list_del(list_entry_t *prev, list_entry_t *next) {
@@ -160,4 +151,3 @@ __list_del(list_entry_t *prev, list_entry_t *next) {
 #endif /* !__ASSEMBLER__ */
 
 #endif /* !__LIBS_LIST_H__ */
-

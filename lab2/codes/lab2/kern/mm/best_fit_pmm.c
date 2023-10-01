@@ -65,7 +65,7 @@ best_fit_init(void) {
     list_init(&free_list);
     nr_free = 0;
 }
-
+// 初始化内存映射，使用最佳适应算法
 static void
 best_fit_init_memmap(struct Page *base, size_t n) {
     assert(n > 0);
@@ -79,10 +79,12 @@ best_fit_init_memmap(struct Page *base, size_t n) {
         p->flags = p->property = 0;
         set_page_ref(p, 0);
     }
+    // 设置起始页框的属性为n，表示这个连续的页框区域的大小
     base->property = n;
     SetPageProperty(base);
     nr_free += n;
     if (list_empty(&free_list)) {
+        // 如果空闲列表为空，直接将base添加到空闲列表
         list_add(&free_list, &(base->page_link));
     } else {
         list_entry_t* le = &free_list;
@@ -105,7 +107,7 @@ best_fit_init_memmap(struct Page *base, size_t n) {
         }
     }
 }
-
+// 使用最佳适应算法分配n个连续的物理页面
 static struct Page *
 best_fit_alloc_pages(size_t n) {
     assert(n > 0);
@@ -141,7 +143,7 @@ best_fit_alloc_pages(size_t n) {
     }
     return page;
 }
-
+// 释放n个物理页面
 static void
 best_fit_free_pages(struct Page *base, size_t n) {
     assert(n > 0);
@@ -159,15 +161,18 @@ best_fit_free_pages(struct Page *base, size_t n) {
     nr_free += n;
 
     if (list_empty(&free_list)) {
+        // 如果空闲列表为空，直接将base添加到空闲列表
         list_add(&free_list, &(base->page_link));
     } else {
         list_entry_t* le = &free_list;
         while ((le = list_next(le)) != &free_list) {
             struct Page* page = le2page(le, page_link);
             if (base < page) {
+                // 插入base到前一个空闲页块之前
                 list_add_before(le, &(base->page_link));
                 break;
             } else if (list_next(le) == &free_list) {
+                // 已经到达链表结尾，将base插入到链表尾部
                 list_add(le, &(base->page_link));
             }
         }
@@ -202,7 +207,7 @@ best_fit_free_pages(struct Page *base, size_t n) {
         }
     }
 }
-
+// 返回当前空闲页面数量
 static size_t
 best_fit_nr_free_pages(void) {
     return nr_free;
