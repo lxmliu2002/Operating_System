@@ -96,6 +96,303 @@
 
 ## 扩展练习
 
-**设计思路**：将新加入的页面或刚刚访问的页插入到链表头部，这样每次换出页面时只需要将链表尾部的页面取出即可。
+### 设计思路
 
-为了知道访问了哪个页面，可以在建立页表项时将每个页面的权限全部设置为不可写也不可读，这样在访问一个页面的时候会引发缺页异常，将所有页的页表项的权限设置为不可写也不可执行，之后将该页放到链表头部，设置页面为可读可写。
+将新加入的页面或刚刚访问的页插入到链表头部，这样每次换出页面时只需要将链表尾部的页面取出即可。
+
+为了知道访问了哪个页面，可以在建立页表项时将每个页面的权限全部设置为不可读，这样在访问一个页面的时候会引发缺页异常，将所有页的页表项的权限设置为不可读，之后将该页放到链表头部，设置页面为可读。
+
+### 代码实现
+
+在`do_pgfault`中添加如下代码：
+
+```c
+pte_t* temp = NULL;
+temp = get_pte(mm->pgdir, addr, 0);
+if(temp != NULL && (*temp & (PTE_V | PTE_R))) {
+    return lru_pgfault(mm, error_code, addr);
+}
+```
+
+在为`perm`设置完权限之后，移除读权限：
+
+```c
+perm &= ~PTE_R;
+```
+
+`lru`的异常处理部分：
+
+```c
+int lru_pgfault(struct mm_struct *mm, uint_t error_code, uintptr_t addr) {
+    cprintf("lru page fault at 0x%x\n", addr);
+    // 设置所有页面不可读
+    if(swap_init_ok) 
+        unable_page_read(mm);
+    // 将需要获得的页面设置为可读
+    pte_t* ptep = NULL;
+    ptep = get_pte(mm->pgdir, addr, 0);
+    *ptep |= PTE_R;
+    if(!swap_init_ok) 
+        return 0;
+    struct Page* page = pte2page(*ptep);
+    // 将该页放在链表头部
+    list_entry_t *head=(list_entry_t*) mm->sm_priv, *le = head;
+    while ((le = list_prev(le)) != head)
+    {
+        struct Page* curr = le2page(le, pra_page_link);
+        if(page == curr) {
+            
+            list_del(le);
+            list_add(head, le);
+            break;
+        }
+    }
+    return 0;
+}
+```
+
+设置所有页面不可读，原理是遍历链表，转换为`page`，根据`pra_vaddr`获得页表项，设置不可写：
+
+```c
+static int
+unable_page_read(struct mm_struct *mm) {
+    list_entry_t *head=(list_entry_t*) mm->sm_priv, *le = head;
+    while ((le = list_prev(le)) != head)
+    {
+        struct Page* page = le2page(le, pra_page_link);
+        pte_t* ptep = NULL;
+        ptep = get_pte(mm->pgdir, page->pra_vaddr, 0);
+        *ptep &= ~PTE_R;
+    }
+    return 0;
+}
+```
+
+其余部分与`FIFO`算法差异不大，罗列如下：
+
+```c
+static int
+_lru_init_mm(struct mm_struct *mm)
+{     
+
+    list_init(&pra_list_head);
+    mm->sm_priv = &pra_list_head;
+     //cprintf(" mm->sm_priv %x in fifo_init_mm\n",mm->sm_priv);
+     return 0;
+}
+
+static int
+_lru_map_swappable(struct mm_struct *mm, uintptr_t addr, struct Page *page, int swap_in)
+{
+    list_entry_t *head=(list_entry_t*) mm->sm_priv;
+    list_entry_t *entry=&(page->pra_page_link);
+ 
+    assert(entry != NULL && head != NULL);
+    list_add((list_entry_t*) mm->sm_priv,entry);
+    return 0;
+}
+static int
+_lru_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tick)
+{
+     list_entry_t *head=(list_entry_t*) mm->sm_priv;
+         assert(head != NULL);
+     assert(in_tick==0);
+    list_entry_t* entry = list_prev(head);
+    if (entry != head) {
+        list_del(entry);
+        *ptr_page = le2page(entry, pra_page_link);
+    } else {
+        *ptr_page = NULL;
+    }
+    return 0;
+}
+```
+
+### 测试
+
+设计额外的测试如下：
+
+```c
+static void
+print_mm_list() {
+    cprintf("--------begin----------\n");
+    list_entry_t *head = &pra_list_head, *le = head;
+    while ((le = list_next(le)) != head)
+    {
+        struct Page* page = le2page(le, pra_page_link);
+        cprintf("vaddr: %x\n", page->pra_vaddr);
+    }
+    cprintf("---------end-----------\n");
+}
+static int
+_lru_check_swap(void) {
+    print_mm_list();
+    cprintf("write Virt Page c in lru_check_swap\n");
+    *(unsigned char *)0x3000 = 0x0c;
+    print_mm_list();
+    cprintf("write Virt Page a in lru_check_swap\n");
+    *(unsigned char *)0x1000 = 0x0a;
+    print_mm_list();
+    cprintf("write Virt Page b in lru_check_swap\n");
+    *(unsigned char *)0x2000 = 0x0b;
+    print_mm_list();
+    cprintf("write Virt Page e in lru_check_swap\n");
+    *(unsigned char *)0x5000 = 0x0e;
+    print_mm_list();
+    cprintf("write Virt Page b in lru_check_swap\n");
+    *(unsigned char *)0x2000 = 0x0b;
+    print_mm_list();
+    cprintf("write Virt Page a in lru_check_swap\n");
+    *(unsigned char *)0x1000 = 0x0a;
+    print_mm_list();
+    cprintf("write Virt Page b in lru_check_swap\n");
+    *(unsigned char *)0x2000 = 0x0b;
+    print_mm_list();
+    cprintf("write Virt Page c in lru_check_swap\n");
+    *(unsigned char *)0x3000 = 0x0c;
+    print_mm_list();
+    cprintf("write Virt Page d in lru_check_swap\n");
+    *(unsigned char *)0x4000 = 0x0d;
+    print_mm_list();
+    cprintf("write Virt Page e in lru_check_swap\n");
+    *(unsigned char *)0x5000 = 0x0e;
+    print_mm_list();
+    cprintf("write Virt Page a in lru_check_swap\n");
+    assert(*(unsigned char *)0x1000 == 0x0a);
+    *(unsigned char *)0x1000 = 0x0a;
+    print_mm_list();
+    return 0;
+}
+```
+
+与测试有关的测试结果如下：
+
+```c
+set up init env for check_swap over!
+--------begin----------
+vaddr: 0x4000
+vaddr: 0x3000
+vaddr: 0x2000
+vaddr: 0x1000
+---------end-----------
+write Virt Page c in lru_check_swap
+Store/AMO page fault
+page fault at 0x00003000: K/W
+lru page fault at 0x3000
+--------begin----------
+vaddr: 0x3000
+vaddr: 0x4000
+vaddr: 0x2000
+vaddr: 0x1000
+---------end-----------
+write Virt Page a in lru_check_swap
+Store/AMO page fault
+page fault at 0x00001000: K/W
+lru page fault at 0x1000
+--------begin----------
+vaddr: 0x1000
+vaddr: 0x3000
+vaddr: 0x4000
+vaddr: 0x2000
+---------end-----------
+write Virt Page b in lru_check_swap
+Store/AMO page fault
+page fault at 0x00002000: K/W
+lru page fault at 0x2000
+--------begin----------
+vaddr: 0x2000
+vaddr: 0x1000
+vaddr: 0x3000
+vaddr: 0x4000
+---------end-----------
+write Virt Page e in lru_check_swap
+Store/AMO page fault
+page fault at 0x00005000: K/W
+swap_out: i 0, store page in vaddr 0x4000 to disk swap entry 5
+Store/AMO page fault
+page fault at 0x00005000: K/W
+lru page fault at 0x5000
+--------begin----------
+vaddr: 0x5000
+vaddr: 0x2000
+vaddr: 0x1000
+vaddr: 0x3000
+---------end-----------
+write Virt Page b in lru_check_swap
+Store/AMO page fault
+page fault at 0x00002000: K/W
+lru page fault at 0x2000
+--------begin----------
+vaddr: 0x2000
+vaddr: 0x5000
+vaddr: 0x1000
+vaddr: 0x3000
+---------end-----------
+write Virt Page a in lru_check_swap
+Store/AMO page fault
+page fault at 0x00001000: K/W
+lru page fault at 0x1000
+--------begin----------
+vaddr: 0x1000
+vaddr: 0x2000
+vaddr: 0x5000
+vaddr: 0x3000
+---------end-----------
+write Virt Page b in lru_check_swap
+--------begin----------
+vaddr: 0x1000
+vaddr: 0x2000
+vaddr: 0x5000
+vaddr: 0x3000
+---------end-----------
+write Virt Page c in lru_check_swap
+Store/AMO page fault
+page fault at 0x00003000: K/W
+lru page fault at 0x3000
+--------begin----------
+vaddr: 0x3000
+vaddr: 0x1000
+vaddr: 0x2000
+vaddr: 0x5000
+---------end-----------
+write Virt Page d in lru_check_swap
+Store/AMO page fault
+page fault at 0x00004000: K/W
+swap_out: i 0, store page in vaddr 0x5000 to disk swap entry 6
+swap_in: load disk swap entry 5 with swap_page in vadr 0x4000
+Store/AMO page fault
+page fault at 0x00004000: K/W
+lru page fault at 0x4000
+--------begin----------
+vaddr: 0x4000
+vaddr: 0x3000
+vaddr: 0x1000
+vaddr: 0x2000
+---------end-----------
+write Virt Page e in lru_check_swap
+Store/AMO page fault
+page fault at 0x00005000: K/W
+swap_out: i 0, store page in vaddr 0x2000 to disk swap entry 3
+swap_in: load disk swap entry 6 with swap_page in vadr 0x5000
+Store/AMO page fault
+page fault at 0x00005000: K/W
+lru page fault at 0x5000
+--------begin----------
+vaddr: 0x5000
+vaddr: 0x4000
+vaddr: 0x3000
+vaddr: 0x1000
+---------end-----------
+write Virt Page a in lru_check_swap
+Load page fault
+page fault at 0x00001000: K/R
+lru page fault at 0x1000
+--------begin----------
+vaddr: 0x1000
+vaddr: 0x5000
+vaddr: 0x4000
+vaddr: 0x3000
+---------end-----------
+```
+
+可以看到每次访问页面时都会产生缺页异常，将该页面添加到链表头部，需要移除页面时都从链表尾部删除页面。
