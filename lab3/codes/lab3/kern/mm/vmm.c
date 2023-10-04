@@ -7,6 +7,7 @@
 #include <pmm.h>
 #include <riscv.h>
 #include <swap.h>
+#include <swap_lru.h>
 
 /* 
   vmm design include two parts: mm_struct (mm) & vma_struct (vma)
@@ -329,6 +330,13 @@ volatile unsigned int pgfault_num=0;
  */
 int
 do_pgfault(struct mm_struct *mm, uint_t error_code, uintptr_t addr) {
+    // pte_t* temp = NULL;
+    // temp = get_pte(mm->pgdir, addr, 0);
+    // if(temp != NULL && (*temp & (PTE_V | PTE_R))) {
+    //     return lru_pgfault(mm, error_code, addr);
+    // }
+
+
     int ret = -E_INVAL;
     //try to find a vma which include addr
     struct vma_struct *vma = find_vma(mm, addr);
@@ -350,6 +358,8 @@ do_pgfault(struct mm_struct *mm, uint_t error_code, uintptr_t addr) {
     if (vma->vm_flags & VM_WRITE) {
         perm |= (PTE_R | PTE_W);
     }
+    // perm &= ~PTE_R;
+
     addr = ROUNDDOWN(addr, PGSIZE);
 
     ret = -E_NO_MEM;

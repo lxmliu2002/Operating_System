@@ -7,6 +7,7 @@
 #include <memlayout.h>
 #include <pmm.h>
 #include <mmu.h>
+#include <swap_lru.h>
 
 // the valid vaddr for check is between 0~CHECK_VALID_VADDR-1
 #define CHECK_VALID_VIR_PAGE_NUM 5
@@ -40,7 +41,8 @@ swap_init(void)
      }
 
     sm = &swap_manager_clock;//use first in first out Page Replacement Algorithm
-    //sm = &swap_manager_fifo;
+    // sm = &swap_manager_fifo;
+    // sm = &swap_manager_lru;
      int r = sm->init();
      
      if (r == 0)
@@ -176,6 +178,8 @@ extern free_area_t free_area;
 #define free_list (free_area.free_list)
 #define nr_free (free_area.nr_free)
 
+
+
 static void
 check_swap(void)
 {
@@ -253,7 +257,7 @@ check_swap(void)
      }
      cprintf("set up init env for check_swap over!\n");
      // now access the virt pages to test  page relpacement algorithm 
-     ret=check_content_access();
+    ret=check_content_access();
      assert(ret==0);
      
      //restore kernel mem env
