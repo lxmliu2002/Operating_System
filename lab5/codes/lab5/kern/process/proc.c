@@ -438,12 +438,12 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     if(setup_kstack(proc) != 0) {
         goto bad_fork_cleanup_proc;
     }
-    // if(copy_mm(clone_flags, proc) != 0) {
-    //     goto bad_fork_cleanup_kstack;
-    // }
-    if(cow_copy_mm(proc) != 0) {
+    if(copy_mm(clone_flags, proc) != 0) {
         goto bad_fork_cleanup_kstack;
     }
+    // if(cow_copy_mm(proc) != 0) {
+    //     goto bad_fork_cleanup_kstack;
+    // }
     copy_thread(proc, stack, tf);
     bool intr_flag;
     local_intr_save(intr_flag);
