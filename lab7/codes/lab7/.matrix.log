@@ -1,0 +1,366 @@
+
+OpenSBI v0.4 (Jul  2 2019 11:53:53)
+   ____                    _____ ____ _____
+  / __ \                  / ____|  _ \_   _|
+ | |  | |_ __   ___ _ __ | (___ | |_) || |
+ | |  | | '_ \ / _ \ '_ \ \___ \|  _ < | |
+ | |__| | |_) |  __/ | | |____) | |_) || |_
+  \____/| .__/ \___|_| |_|_____/|____/_____|
+        | |
+        |_|
+
+Platform Name          : QEMU Virt Machine
+Platform HART Features : RV64ACDFIMSU
+Platform Max HARTs     : 8
+Current Hart           : 0
+Firmware Base          : 0x80000000
+Firmware Size          : 112 KB
+Runtime SBI Version    : 0.1
+
+PMP0: 0x0000000080000000-0x000000008001ffff (A)
+PMP1: 0x0000000000000000-0xffffffffffffffff (A,R,W,X)
+(THU.CST) os is loading ...
+
+Special kernel symbols:
+  entry  0xc0200036 (virtual)
+  etext  0xc0207500 (virtual)
+  edata  0xc02d3e50 (virtual)
+  end    0xc02df560 (virtual)
+Kernel executable memory footprint: 894KB
+memory management: default_pmm_manager
+physcial memory map:
+  memory: 0x07e00000, [0x80200000, 0x87ffffff].
+vapaofset is 18446744070488326144
+check_alloc_page() succeeded!
+check_pgdir() succeeded!
+check_boot_pgdir() succeeded!
+use SLOB allocator
+kmalloc_init() succeeded!
+check_vma_struct() succeeded!
+Store/AMO page fault
+page fault at 0x00000100: K/W
+check_pgfault() succeeded!
+check_vmm() succeeded.
+sched class: RR_scheduler
+SWAP: manager = fifo swap manager
+BEGIN check_swap: count 1, total 31516
+setup Page Table for vaddr 0X1000, so alloc a page
+setup Page Table vaddr 0~4MB OVER!
+set up init env for check_swap begin!
+Store/AMO page fault
+page fault at 0x00001000: K/W
+Store/AMO page fault
+page fault at 0x00002000: K/W
+Store/AMO page fault
+page fault at 0x00003000: K/W
+Store/AMO page fault
+page fault at 0x00004000: K/W
+set up init env for check_swap over!
+write Virt Page c in fifo_check_swap
+write Virt Page a in fifo_check_swap
+write Virt Page d in fifo_check_swap
+write Virt Page b in fifo_check_swap
+write Virt Page e in fifo_check_swap
+Store/AMO page fault
+page fault at 0x00005000: K/W
+swap_out: i 0, store page in vaddr 0x1000 to disk swap entry 2
+write Virt Page b in fifo_check_swap
+write Virt Page a in fifo_check_swap
+Store/AMO page fault
+page fault at 0x00001000: K/W
+swap_out: i 0, store page in vaddr 0x2000 to disk swap entry 3
+swap_in: load disk swap entry 2 with swap_page in vadr 0x1000
+write Virt Page b in fifo_check_swap
+Store/AMO page fault
+page fault at 0x00002000: K/W
+swap_out: i 0, store page in vaddr 0x3000 to disk swap entry 4
+swap_in: load disk swap entry 3 with swap_page in vadr 0x2000
+write Virt Page c in fifo_check_swap
+Store/AMO page fault
+page fault at 0x00003000: K/W
+swap_out: i 0, store page in vaddr 0x4000 to disk swap entry 5
+swap_in: load disk swap entry 4 with swap_page in vadr 0x3000
+write Virt Page d in fifo_check_swap
+Store/AMO page fault
+page fault at 0x00004000: K/W
+swap_out: i 0, store page in vaddr 0x5000 to disk swap entry 6
+swap_in: load disk swap entry 5 with swap_page in vadr 0x4000
+write Virt Page e in fifo_check_swap
+Store/AMO page fault
+page fault at 0x00005000: K/W
+swap_out: i 0, store page in vaddr 0x1000 to disk swap entry 2
+swap_in: load disk swap entry 6 with swap_page in vadr 0x5000
+write Virt Page a in fifo_check_swap
+Load page fault
+page fault at 0x00001000: K/R
+swap_out: i 0, store page in vaddr 0x2000 to disk swap entry 3
+swap_in: load disk swap entry 2 with swap_page in vadr 0x1000
+check_swap() succeeded!
+++ setup timer interrupts
+kernel_execve: pid = 2, name = "matrix".
+Breakpoint
+fork ok.
+I am No.0 philosopher_sema
+Iter 1, No.0 philosopher_sema is thinking
+I am No.1 philosopher_sema
+Iter 1, No.1 philosopher_sema is thinking
+I am No.2 philosopher_sema
+Iter 1, No.2 philosopher_sema is thinking
+I am No.3 philosopher_sema
+Iter 1, No.3 philosopher_sema is thinking
+I am No.4 philosopher_sema
+Iter 1, No.4 philosopher_sema is thinking
+pid 8 is running (1100 times)!.
+pid 8 done!.
+pid 9 is running (1100 times)!.
+pid 9 done!.
+pid 10 is running (1400 times)!.
+pid 10 done!.
+pid 11 is running (2600 times)!.
+pid 11 done!.
+pid 12 is running (5900 times)!.
+pid 12 done!.
+pid 13 is running (13100 times)!.
+pid 13 done!.
+pid 14 is running (23500 times)!.
+pid 14 done!.
+pid 15 is running (41000 times)!.
+pid 16 is running (3500 times)!.
+pid 16 done!.
+pid 17 is running (15400 times)!.
+pid 17 done!.
+pid 18 is running (41000 times)!.
+pid 19 is running (5900 times)!.
+pid 19 done!.
+pid 20 is running (26600 times)!.
+pid 21 is running (3500 times)!.
+pid 21 done!.
+pid 22 is running (26600 times)!.
+pid 23 is running (5900 times)!.
+pid 23 done!.
+pid 24 is running (37100 times)!.
+pid 25 is running (15400 times)!.
+pid 26 is running (3500 times)!.
+pid 26 done!.
+pid 27 is running (33400 times)!.
+pid 28 is running (17900 times)!.
+Iter 1, No.0 philosopher_sema is eating
+Iter 1, No.2 philosopher_sema is eating
+pid 15 done!.
+pid 20 done!.
+pid 22 done!.
+pid 25 done!.
+pid 28 done!.
+pid 18 done!.
+Iter 2, No.0 philosopher_sema is thinking
+Iter 2, No.2 philosopher_sema is thinking
+pid 27 done!.
+Iter 1, No.4 philosopher_sema is eating
+Iter 1, No.1 philosopher_sema is eating
+pid 24 done!.
+matrix pass.
+Iter 2, No.4 philosopher_sema is thinking
+Iter 2, No.1 philosopher_sema is thinking
+Iter 1, No.3 philosopher_sema is eating
+Iter 2, No.0 philosopher_sema is eating
+Iter 2, No.3 philosopher_sema is thinking
+Iter 3, No.0 philosopher_sema is thinking
+Iter 2, No.2 philosopher_sema is eating
+Iter 2, No.4 philosopher_sema is eating
+Iter 3, No.2 philosopher_sema is thinking
+Iter 3, No.4 philosopher_sema is thinking
+Iter 2, No.1 philosopher_sema is eating
+Iter 2, No.3 philosopher_sema is eating
+Iter 3, No.1 philosopher_sema is thinking
+Iter 3, No.3 philosopher_sema is thinking
+Iter 3, No.0 philosopher_sema is eating
+Iter 3, No.2 philosopher_sema is eating
+Iter 4, No.0 philosopher_sema is thinking
+Iter 4, No.2 philosopher_sema is thinking
+Iter 3, No.4 philosopher_sema is eating
+Iter 3, No.1 philosopher_sema is eating
+Iter 4, No.4 philosopher_sema is thinking
+Iter 4, No.1 philosopher_sema is thinking
+Iter 3, No.3 philosopher_sema is eating
+Iter 4, No.0 philosopher_sema is eating
+Iter 4, No.3 philosopher_sema is thinking
+No.0 philosopher_sema quit
+Iter 4, No.2 philosopher_sema is eating
+Iter 4, No.4 philosopher_sema is eating
+No.2 philosopher_sema quit
+No.4 philosopher_sema quit
+Iter 4, No.1 philosopher_sema is eating
+Iter 4, No.3 philosopher_sema is eating
+No.1 philosopher_sema quit
+No.3 philosopher_sema quit
+I am No.0 philosopher_condvar
+Iter 1, No.0 philosopher_condvar is thinking
+I am No.1 philosopher_condvar
+Iter 1, No.1 philosopher_condvar is thinking
+I am No.2 philosopher_condvar
+Iter 1, No.2 philosopher_condvar is thinking
+I am No.3 philosopher_condvar
+Iter 1, No.3 philosopher_condvar is thinking
+I am No.4 philosopher_condvar
+Iter 1, No.4 philosopher_condvar is thinking
+phi_test_condvar: state_condvar[0] will eating
+phi_test_condvar: signal self_cv[0] 
+cond_signal begin: cvp c0559010, cvp->count 0, cvp->owner->next_count 0
+cond_signal end: cvp c0559010, cvp->count 0, cvp->owner->next_count 0
+Iter 1, No.0 philosopher_condvar is eating
+cond_wait begin:  cvp c0559038, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[2] will eating
+phi_test_condvar: signal self_cv[2] 
+cond_signal begin: cvp c0559060, cvp->count 0, cvp->owner->next_count 0
+cond_signal end: cvp c0559060, cvp->count 0, cvp->owner->next_count 0
+Iter 1, No.2 philosopher_condvar is eating
+cond_wait begin:  cvp c0559088, cvp->count 0, cvp->owner->next_count 0
+cond_wait begin:  cvp c05590b0, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[4] will eating
+phi_test_condvar: signal self_cv[4] 
+cond_signal begin: cvp c05590b0, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c05590b0, cvp->count 0, cvp->owner->next_count 1
+Iter 1, No.4 philosopher_condvar is eating
+cond_signal end: cvp c05590b0, cvp->count 0, cvp->owner->next_count 0
+Iter 2, No.0 philosopher_condvar is thinking
+phi_test_condvar: state_condvar[1] will eating
+phi_test_condvar: signal self_cv[1] 
+cond_signal begin: cvp c0559038, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559038, cvp->count 0, cvp->owner->next_count 1
+Iter 1, No.1 philosopher_condvar is eating
+cond_signal end: cvp c0559038, cvp->count 0, cvp->owner->next_count 0
+Iter 2, No.2 philosopher_condvar is thinking
+phi_test_condvar: state_condvar[3] will eating
+phi_test_condvar: signal self_cv[3] 
+cond_signal begin: cvp c0559088, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559088, cvp->count 0, cvp->owner->next_count 1
+Iter 1, No.3 philosopher_condvar is eating
+cond_signal end: cvp c0559088, cvp->count 0, cvp->owner->next_count 0
+Iter 2, No.4 philosopher_condvar is thinking
+cond_wait begin:  cvp c0559010, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[0] will eating
+phi_test_condvar: signal self_cv[0] 
+cond_signal begin: cvp c0559010, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559010, cvp->count 0, cvp->owner->next_count 1
+Iter 2, No.0 philosopher_condvar is eating
+cond_signal end: cvp c0559010, cvp->count 0, cvp->owner->next_count 0
+Iter 2, No.1 philosopher_condvar is thinking
+cond_wait begin:  cvp c0559060, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[2] will eating
+phi_test_condvar: signal self_cv[2] 
+cond_signal begin: cvp c0559060, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559060, cvp->count 0, cvp->owner->next_count 1
+Iter 2, No.2 philosopher_condvar is eating
+cond_signal end: cvp c0559060, cvp->count 0, cvp->owner->next_count 0
+Iter 2, No.3 philosopher_condvar is thinking
+cond_wait begin:  cvp c05590b0, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[4] will eating
+phi_test_condvar: signal self_cv[4] 
+cond_signal begin: cvp c05590b0, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c05590b0, cvp->count 0, cvp->owner->next_count 1
+Iter 2, No.4 philosopher_condvar is eating
+cond_signal end: cvp c05590b0, cvp->count 0, cvp->owner->next_count 0
+Iter 3, No.0 philosopher_condvar is thinking
+cond_wait begin:  cvp c0559038, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[1] will eating
+phi_test_condvar: signal self_cv[1] 
+cond_signal begin: cvp c0559038, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559038, cvp->count 0, cvp->owner->next_count 1
+Iter 2, No.1 philosopher_condvar is eating
+cond_signal end: cvp c0559038, cvp->count 0, cvp->owner->next_count 0
+Iter 3, No.2 philosopher_condvar is thinking
+cond_wait begin:  cvp c0559088, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[3] will eating
+phi_test_condvar: signal self_cv[3] 
+cond_signal begin: cvp c0559088, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559088, cvp->count 0, cvp->owner->next_count 1
+Iter 2, No.3 philosopher_condvar is eating
+cond_signal end: cvp c0559088, cvp->count 0, cvp->owner->next_count 0
+Iter 3, No.4 philosopher_condvar is thinking
+cond_wait begin:  cvp c0559010, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[0] will eating
+phi_test_condvar: signal self_cv[0] 
+cond_signal begin: cvp c0559010, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559010, cvp->count 0, cvp->owner->next_count 1
+Iter 3, No.0 philosopher_condvar is eating
+cond_signal end: cvp c0559010, cvp->count 0, cvp->owner->next_count 0
+Iter 3, No.1 philosopher_condvar is thinking
+cond_wait begin:  cvp c0559060, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[2] will eating
+phi_test_condvar: signal self_cv[2] 
+cond_signal begin: cvp c0559060, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559060, cvp->count 0, cvp->owner->next_count 1
+Iter 3, No.2 philosopher_condvar is eating
+cond_signal end: cvp c0559060, cvp->count 0, cvp->owner->next_count 0
+Iter 3, No.3 philosopher_condvar is thinking
+cond_wait begin:  cvp c05590b0, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[4] will eating
+phi_test_condvar: signal self_cv[4] 
+cond_signal begin: cvp c05590b0, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c05590b0, cvp->count 0, cvp->owner->next_count 1
+Iter 3, No.4 philosopher_condvar is eating
+cond_signal end: cvp c05590b0, cvp->count 0, cvp->owner->next_count 0
+Iter 4, No.0 philosopher_condvar is thinking
+cond_wait begin:  cvp c0559038, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[1] will eating
+phi_test_condvar: signal self_cv[1] 
+cond_signal begin: cvp c0559038, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559038, cvp->count 0, cvp->owner->next_count 1
+Iter 3, No.1 philosopher_condvar is eating
+cond_signal end: cvp c0559038, cvp->count 0, cvp->owner->next_count 0
+Iter 4, No.2 philosopher_condvar is thinking
+cond_wait begin:  cvp c0559088, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[3] will eating
+phi_test_condvar: signal self_cv[3] 
+cond_signal begin: cvp c0559088, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559088, cvp->count 0, cvp->owner->next_count 1
+Iter 3, No.3 philosopher_condvar is eating
+cond_signal end: cvp c0559088, cvp->count 0, cvp->owner->next_count 0
+Iter 4, No.4 philosopher_condvar is thinking
+cond_wait begin:  cvp c0559010, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[0] will eating
+phi_test_condvar: signal self_cv[0] 
+cond_signal begin: cvp c0559010, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559010, cvp->count 0, cvp->owner->next_count 1
+Iter 4, No.0 philosopher_condvar is eating
+cond_signal end: cvp c0559010, cvp->count 0, cvp->owner->next_count 0
+Iter 4, No.1 philosopher_condvar is thinking
+cond_wait begin:  cvp c0559060, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[2] will eating
+phi_test_condvar: signal self_cv[2] 
+cond_signal begin: cvp c0559060, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559060, cvp->count 0, cvp->owner->next_count 1
+Iter 4, No.2 philosopher_condvar is eating
+cond_signal end: cvp c0559060, cvp->count 0, cvp->owner->next_count 0
+Iter 4, No.3 philosopher_condvar is thinking
+cond_wait begin:  cvp c05590b0, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[4] will eating
+phi_test_condvar: signal self_cv[4] 
+cond_signal begin: cvp c05590b0, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c05590b0, cvp->count 0, cvp->owner->next_count 1
+Iter 4, No.4 philosopher_condvar is eating
+cond_signal end: cvp c05590b0, cvp->count 0, cvp->owner->next_count 0
+No.0 philosopher_condvar quit
+cond_wait begin:  cvp c0559038, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[1] will eating
+phi_test_condvar: signal self_cv[1] 
+cond_signal begin: cvp c0559038, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559038, cvp->count 0, cvp->owner->next_count 1
+Iter 4, No.1 philosopher_condvar is eating
+cond_signal end: cvp c0559038, cvp->count 0, cvp->owner->next_count 0
+No.2 philosopher_condvar quit
+cond_wait begin:  cvp c0559088, cvp->count 0, cvp->owner->next_count 0
+phi_test_condvar: state_condvar[3] will eating
+phi_test_condvar: signal self_cv[3] 
+cond_signal begin: cvp c0559088, cvp->count 1, cvp->owner->next_count 0
+cond_wait end:  cvp c0559088, cvp->count 0, cvp->owner->next_count 1
+Iter 4, No.3 philosopher_condvar is eating
+cond_signal end: cvp c0559088, cvp->count 0, cvp->owner->next_count 0
+No.4 philosopher_condvar quit
+No.1 philosopher_condvar quit
+No.3 philosopher_condvar quit
+all user-mode processes have quit.
+init check memory pass.
+kernel panic at kern/process/proc.c:490:
+    initproc exit.
+
