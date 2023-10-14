@@ -1,7 +1,10 @@
 {
     "files.associations": {
-        "default_pmm.h": "c",
-        "best_fit_pmm.h": "c",
-        "slub_pmm.h": "c"
+        "*.l": "lex",
+        "pmm.h": "c",
+        "atomic.h": "c",
+        "default_sched_stride.C": "cpp",
+        "defs.h": "c",
+        "assert.h": "c"
     }
 }

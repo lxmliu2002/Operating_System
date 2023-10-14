@@ -8,18 +8,29 @@
 #include <mmu.h>
 #include <riscv.h>
 
-// pmm_manager 是一个物理内存管理类。一个特殊的 pmm 管理器 -XXX_pmm_manager
-// 只需要实现 pmm_manager 类中的方法，然后 XXX_pmm_manager 可以被 ucore 用于管理总的物理内存空间。
+// pmm_manager is a physical memory management class. A special pmm manager -
+// XXX_pmm_manager
+// only needs to implement the methods in pmm_manager class, then
+// XXX_pmm_manager can be used
+// by ucore to manage the total physical memory space.
 struct pmm_manager {
-    const char *name;  // XXX_pmm_manager 的名称
-    void (*init)(void);  // 初始化 XXX_pmm_manager 的内部描述和管理数据结构（空闲块列表，空闲块的数量）
-    void (*init_memmap)(struct Page *base, size_t n);  // 根据初始的空闲物理内存空间设置描述和管理数据结构
-    struct Page *(*alloc_pages)(size_t n);  // 分配 >=n 个页面，取决于分配算法
-    void (*free_pages)(struct Page *base, size_t n);  // 释放 >=n 个页面，基于 Page 描述符结构的 "base" 地址
-    size_t (*nr_free_pages)(void);  // 返回空闲页面的数量
-    void (*check)(void);            // 检查 XXX_pmm_manager 的正确性
+    const char *name;  // XXX_pmm_manager's name
+    void (*init)(
+        void);  // initialize internal description&management data structure
+                // (free block list, number of free block) of XXX_pmm_manager
+    void (*init_memmap)(
+        struct Page *base,
+        size_t n);  // setup description&management data structcure according to
+                    // the initial free physical memory space
+    struct Page *(*alloc_pages)(
+        size_t n);  // allocate >=n pages, depend on the allocation algorithm
+    void (*free_pages)(struct Page *base, size_t n);  // free >=n pages with
+                                                      // "base" addr of Page
+                                                      // descriptor
+                                                      // structures(memlayout.h)
+    size_t (*nr_free_pages)(void);  // return the number of free pages
+    void (*check)(void);            // check the correctness of XXX_pmm_manager
 };
-
 
 extern const struct pmm_manager *pmm_manager;
 
@@ -34,14 +45,13 @@ size_t nr_free_pages(void); // number of free pages
 
 
 /* *
- * PADDR - 接受一个内核虚拟地址（指向 KERNBASE 以上的地址），其中机器的最大 256MB 物理内存被映射，并返回对应的物理地址。如果传递非内核虚拟地址，将会引发 panic。
+ * PADDR - takes a kernel virtual address (an address that points above
+ * KERNBASE),
+ * where the machine's maximum 256MB of physical memory is mapped and returns
+ * the
+ * corresponding physical address.  It panics if you pass it a non-kernel
+ * virtual address.
  * */
-/*将内核虚拟地址（kva）转换为相应的物理地址*/
-/*
-    首先将传入的内核虚拟地址 kva 强制类型转换为 uintptr_t 类型。
-    然后，它检查是否传入的地址小于 KERNBASE，这是一个宏定义的常数，表示内核的虚拟地址空间的基址。如果传入的地址小于 KERNBASE，则认为它不是内核虚拟地址，会引发 panic。
-    最后，它通过减去 va_pa_offset 来计算物理地址，其中 va_pa_offset 是一个全局变量或宏，表示内核虚拟地址和物理地址之间的偏移量。
-*/
 #define PADDR(kva)                                                 \
     ({                                                             \
         uintptr_t __m_kva = (uintptr_t)(kva);                      \
@@ -52,7 +62,8 @@ size_t nr_free_pages(void); // number of free pages
     })
 
 /* *
- * KADDR - 接受一个物理地址并返回相应的内核虚拟地址。如果传递无效的物理地址，将会引发 panic。
+ * KADDR - takes a physical address and returns the corresponding kernel virtual
+ * address. It panics if you pass an invalid physical address.
  * */
 /*
 #define KADDR(pa)                                                \
@@ -60,14 +71,13 @@ size_t nr_free_pages(void); // number of free pages
         uintptr_t __m_pa = (pa);                                 \
         size_t __m_ppn = PPN(__m_pa);                            \
         if (__m_ppn >= npage) {                                  \
-            panic("KADDR called with invalid pa %08lx", __m_pa);      \
+            panic("KADDR called with invalid pa %08lx", __m_pa); \
         }                                                        \
         (void *)(__m_pa + va_pa_offset);                         \
     })
 */
-extern struct Page *pages; //跟踪和管理系统中的物理页面
-extern size_t npage; //存储系统中可用的物理页面数量
-
+extern struct Page *pages;
+extern size_t npage;
 extern const size_t nbase;
 extern uint64_t va_pa_offset;
 

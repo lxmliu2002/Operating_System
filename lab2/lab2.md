@@ -45,9 +45,9 @@
 ```c
 while ((le = list_next(le)) != &free_list) {
     struct Page *p = le2page(le, page_link);
-    if (p->property >= n) {
-        if(page == NULL || page->property > p->property)
-            page = p;
+    if (p->property >= n && p->property < min_size) {
+        page = p;
+        min_size = p->property;
     }
 }
 ```
@@ -294,7 +294,237 @@ buddy_system_nr_free_pages(void) {
 
 ## 扩展练习：slub分配算法
 
+### 设计思路
 
+slub分配算法是一种任意大小内存分配的算法，主要用于给内核分配小空间的内存。
+
+对于较大的块，可以直接使用原本的页面分配算法，对于小于一页的块，需要将一页的内容划分为小的空间分配，对于每一个分配出去的空间，我们称为slob块，在其头部存在着一个slob块基本信息的结构，用于管理。
+
+### 结构设计
+
+在这里我们定义两种数据类型：
+
++ `slob_t`：slob块，即小空间的内存
+
+  ```c
+  struct slob_block {
+      int units;					// slob块大小，单位是SLOB_UNIT（即slob_t结构体的大小）
+      struct slob_block *next;	 // 下一个slob块
+  };
+  typedef struct slob_block slob_t;
+  ```
+
++ `bigblock_t`：大块，即整页的内存
+
+  ```c
+  struct bigblock {
+  	int order;				// 大块的大小
+  	void *pages;			// 起始页
+  	struct bigblock *next;	 // 下一个大块
+  };
+  typedef struct bigblock bigblock_t;
+  ```
+
+我们还需要维护一些全局变量：
+
+```c
+static slob_t arena = { .next = &arena, .units = 1 };	// 初始的空闲slob块
+static slob_t *slobfree = &arena;					  // 空闲slob块链表，设计为单向循环链表
+static bigblock_t *bigblocks;						 // 大块链表，设计为单向链表
+```
+
+
+### 算法实现
+
+#### 分配内存
+
+在slub分配算法中，对于小内存的分配我们需要在其头部加上一个`slob_t`结构体，所以需要分两种情况讨论：
+
++ 如果待分配的大小没有超过`PGSIZE - SLOB_UNIT`，调用`slob_alloc`为其分配`size + SLOB_UNIT`大小的空间（因为要算上头部的`slob_t`）
++ 如果超过了超过`PGSIZE - SLOB_UNIT`，调用`alloc_pages`为其分配一个大于且最接近这个大小的连续的若干页，并申请一个`bigblock_t`大小的空间管理该页面，将其加入到`bigblocks`链表中
+
+```c
+void *slub_alloc(size_t size)
+{
+	slob_t *m;
+	bigblock_t *bb;
+
+	if (size < PGSIZE - SLOB_UNIT) {
+		m = slob_alloc(size + SLOB_UNIT);
+		return m ? (void *)(m + 1) : 0;
+	}
+
+	bb = slob_alloc(sizeof(bigblock_t));
+	if (!bb)
+		return 0;
+
+	bb->order = ((size-1) >> PGSHIFT) + 1;
+	bb->pages = (void *)alloc_pages(bb->order);
+
+	if (bb->pages) {
+		bb->next = bigblocks;
+		bigblocks = bb;
+		return bb->pages;
+	}
+
+	slob_free(bb, sizeof(bigblock_t));
+	return 0;
+}
+```
+
+对于slob块的分配，由于这里只使用了单向循环链表，所以需要额外记录一下上一个节点的地址。遍历空闲块的链表，比较空闲块的大小于分配的大小关系：
+
++ 如果大小相等，直接分配出去，更新链表
++ 如果空闲块较大，则将多出的空间合并到下一个slub块中，将当前的块分配出去，更新链表
++ 如果没有合适的空间，分配一页，调用`slub_free`将其加入到链表的合适位置，重新遍历
+
+```c
+static void *slob_alloc(size_t size)
+{
+  	assert(size < PGSIZE);
+
+	slob_t *prev, *cur;
+	int  units = SLOB_UNITS(size);
+
+	prev = slobfree;
+	for (cur = prev->next; ; prev = cur, cur = cur->next) {
+		if (cur->units >= units) { 
+
+			if (cur->units == units)
+				prev->next = cur->next;
+			else {
+				prev->next = cur + units;
+				prev->next->units = cur->units - units;
+				prev->next->next = cur->next;
+				cur->units = units;
+			}
+			slobfree = prev;
+			return cur;
+		}
+		if (cur == slobfree) {
+			if (size == PGSIZE)
+				return 0;
+			cur = (slob_t *)alloc_pages(1);
+			if (!cur)
+				return 0;
+			slob_free(cur, PGSIZE);
+			cur = slobfree;
+		}
+	}
+}
+```
+
+#### 释放内存
+
+在释放内存时，也需要分两种情况讨论：
+
++ 如果页面大于一页，那么该页存在于大页链表中，需要在链表中找到管理该页的`bigblock_t`，调用`free_pages`释放该页，并调用`slob_free`释放`bigblock_t`
++ 如果页面小于一页，则调用`slob_free`释放内存，由于在分配出去的时候我们将其加一以获得实际可以使用的内存地址，所以在这里我们需要将其减一以获得`slob_t`
+
+```c
+void slub_free(void *block)
+{
+	bigblock_t *bb, **last = &bigblocks;
+
+	if (!block)
+		return;
+
+	if (!((unsigned long)block & (PGSIZE-1))) {
+		for (bb = bigblocks; bb; last = &bb->next, bb = bb->next) {
+			if (bb->pages == block) {
+				*last = bb->next;
+				free_pages((struct Page *)block, bb->order);
+				slob_free(bb, sizeof(bigblock_t));
+				return;
+			}
+		}
+	}
+
+	slob_free((slob_t *)block - 1, 0);
+	return;
+}
+```
+
+对于slob块的释放，需要经过以下步骤：
+
++ 在空闲块链表中查找该块应处的位置
++ 检查是否能与前后块合并，如果可以，则合并
++ 更新`slobfree`
+
+```c
+static void slob_free(void *block, int size)
+{
+	slob_t *cur, *b = (slob_t *)block;
+	if (!block)
+		return;
+	if (size)
+		b->units = SLOB_UNITS(size);
+	for (cur = slobfree; !(b > cur && b < cur->next); cur = cur->next)
+		if (cur >= cur->next && (b > cur || b < cur->next))
+			break;
+
+	if (b + b->units == cur->next) {
+		b->units += cur->next->units;
+		b->next = cur->next->next;
+	} else
+		b->next = cur->next;
+
+	if (cur + cur->units == b) {
+		cur->units += b->units;
+		cur->next = b->next;
+	} else
+		cur->next = b;
+
+	slobfree = cur;
+}
+```
+
+### 算法测试
+
+编写测试样例如下：
+
+```c
+int slobfree_len()
+{
+    int len = 0;
+    for(slob_t* curr = slobfree->next; curr != slobfree; curr = curr->next)
+        len ++;
+    return len;
+}
+
+void slub_check()
+{
+    cprintf("slub check begin\n");
+    cprintf("slobfree len: %d\n", slobfree_len());
+    void* p1 = slub_alloc(4096);
+    cprintf("slobfree len: %d\n", slobfree_len());
+    void* p2 = slub_alloc(2);
+    void* p3 = slub_alloc(2);
+    cprintf("slobfree len: %d\n", slobfree_len());
+    slub_free(p2);
+    cprintf("slobfree len: %d\n", slobfree_len());
+    slub_free(p3);
+    cprintf("slobfree len: %d\n", slobfree_len());
+    cprintf("slub check end\n");
+}
+```
+
+测试结果如下：
+
+```
+slub_init() succeeded!
+slub check begin
+slobfree len: 0
+slobfree len: 1
+slobfree len: 1
+slobfree len: 2
+slobfree len: 1
+slub check end
+```
+
+**对测试结果的解释**：
+
+初始情况下由于链表中有一个表头，所以长度为1首先分配了一个大内存，slub会为之分配一个页，但是由于在这里需要创建一个`bigblock_t`项，会向slub申请一个小内存，所以申请完成之后`slobfree`的长度增加，后续两次申请时都会从原本的一个大页中取下一部分，所以长度不变。在释放`p2`时，由于其与后一项中间隔了一个`p3`，无法合并，所以`slob`变成了2，之后释放`p3`时会合并，最终变为1。
 
 ## 扩展练习：可用物理内存获取
 
