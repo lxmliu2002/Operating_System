@@ -224,7 +224,7 @@ void exception_handler(struct trapframe *tf) {
         case CAUSE_MACHINE_ECALL:
             cprintf("Environment call from M-mode\n");
             break;
-        case CAUSE_FETCH_PAGE_FAULT:
+        case CAUSE_FETCH_PAGE_FAULT://取指令时发生的Page Fault先不处理
             cprintf("Instruction page fault\n");
             break;
         case CAUSE_LOAD_PAGE_FAULT:
@@ -236,7 +236,7 @@ void exception_handler(struct trapframe *tf) {
             break;
         case CAUSE_STORE_PAGE_FAULT:
             cprintf("Store/AMO page fault\n");
-            if ((ret = pgfault_handler(tf)) != 0) {
+            if ((ret = pgfault_handler(tf)) != 0) {//do_pgfault()页面置换成功时返回0
                 print_trapframe(tf);
                 panic("handle pgfault failed. %e\n", ret);
             }

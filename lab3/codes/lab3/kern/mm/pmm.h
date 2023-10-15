@@ -53,7 +53,7 @@ int page_insert(pde_t *pgdir, struct Page *page, uintptr_t la, uint32_t perm);
 void tlb_invalidate(pde_t *pgdir, uintptr_t la);
 struct Page *pgdir_alloc_page(pde_t *pgdir, uintptr_t la, uint32_t perm);
 
-
+//KADDR, PADDR进行的是物理地址和虚拟地址的互换
 /* *
  * PADDR - takes a kernel virtual address (an address that points above
  * KERNBASE),
@@ -90,12 +90,19 @@ extern size_t npage;
 extern const size_t nbase;
 extern uint_t va_pa_offset;
 
+/*
+ * pages指针是这个数组的起始地址， 减一下， 加上一个基准值nbase, 就可以得到正确的物理页号。
+ * pages指针和nbase基准值我们都在其他地方做了正确的初始化
+*/
 static inline ppn_t page2ppn(struct Page *page) { return page - pages + nbase; }
-
+/*
+* 指向某个Page结构体的指针， 对应一个物理页面， 也对应一个起始的物理地址。
+* 左移若干位就可以从物理页号得到页面的起始物理地址。
+*/
 static inline uintptr_t page2pa(struct Page *page) {
     return page2ppn(page) << PGSHIFT;
 }
-
+//从物理页面的地址得到所在的物理页面。实际上是得到管理这个物理页面的Page结构体
 static inline struct Page *pa2page(uintptr_t pa) {
     if (PPN(pa) >= npage) {
         panic("pa2page called with invalid pa");
@@ -113,7 +120,7 @@ static inline struct Page *pte2page(pte_t pte) {
     }
     return pa2page(PTE_ADDR(pte));
 }
-
+//PDE(Page Directory Entry)指的是不在叶节点的页表项（ 指向低一级页表的页表项）
 static inline struct Page *pde2page(pde_t pde) {
     return pa2page(PDE_ADDR(pde));
 }

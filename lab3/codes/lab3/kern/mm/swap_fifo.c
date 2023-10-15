@@ -33,10 +33,10 @@ list_entry_t pra_list_head;
 static int
 _fifo_init_mm(struct mm_struct *mm)
 {     
-     list_init(&pra_list_head);
-     mm->sm_priv = &pra_list_head;
-     //cprintf(" mm->sm_priv %x in fifo_init_mm\n",mm->sm_priv);
-     return 0;
+    list_init(&pra_list_head);
+    mm->sm_priv = &pra_list_head;
+    //cprintf(" mm->sm_priv %x in fifo_init_mm\n",mm->sm_priv);
+    return 0;
 }
 /*
  * (3)_fifo_map_swappable: According FIFO PRA, we should link the most recent arrival page at the back of pra_list_head qeueue
@@ -46,7 +46,7 @@ _fifo_map_swappable(struct mm_struct *mm, uintptr_t addr, struct Page *page, int
 {
     list_entry_t *head=(list_entry_t*) mm->sm_priv;
     list_entry_t *entry=&(page->pra_page_link);
- 
+
     assert(entry != NULL && head != NULL);
     //record the page access situlation
 
@@ -56,17 +56,17 @@ _fifo_map_swappable(struct mm_struct *mm, uintptr_t addr, struct Page *page, int
 }
 /*
  *  (4)_fifo_swap_out_victim: According FIFO PRA, we should unlink the  earliest arrival page in front of pra_list_head qeueue,
- *                            then set the addr of addr of this page to ptr_page.
+ *                            then set the addr of this page to ptr_page.
  */
 static int
 _fifo_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tick)
 {
-     list_entry_t *head=(list_entry_t*) mm->sm_priv;
-         assert(head != NULL);
-     assert(in_tick==0);
-     /* Select the victim */
-     //(1)  unlink the  earliest arrival page in front of pra_list_head qeueue
-     //(2)  set the addr of addr of this page to ptr_page
+    list_entry_t *head=(list_entry_t*) mm->sm_priv;
+    assert(head != NULL);
+    assert(in_tick==0);
+    /* Select the victim */
+    //(1)  unlink the  earliest arrival page in front of pra_list_head qeueue
+    //(2)  set the addr of addr of this page to ptr_page
     list_entry_t* entry = list_prev(head);
     if (entry != head) {
         list_del(entry);
@@ -139,12 +139,12 @@ _fifo_tick_event(struct mm_struct *mm)
 
 struct swap_manager swap_manager_fifo =
 {
-     .name            = "fifo swap manager",
-     .init            = &_fifo_init,
-     .init_mm         = &_fifo_init_mm,
-     .tick_event      = &_fifo_tick_event,
-     .map_swappable   = &_fifo_map_swappable,
-     .set_unswappable = &_fifo_set_unswappable,
-     .swap_out_victim = &_fifo_swap_out_victim,
-     .check_swap      = &_fifo_check_swap,
+    .name            = "fifo swap manager",
+    .init            = &_fifo_init,
+    .init_mm         = &_fifo_init_mm,
+    .tick_event      = &_fifo_tick_event,
+    .map_swappable   = &_fifo_map_swappable,
+    .set_unswappable = &_fifo_set_unswappable,
+    .swap_out_victim = &_fifo_swap_out_victim,
+    .check_swap      = &_fifo_check_swap,
 };

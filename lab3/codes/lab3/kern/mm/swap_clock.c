@@ -33,7 +33,7 @@ list_entry_t pra_list_head, *curr_ptr;
 static int
 _clock_init_mm(struct mm_struct *mm)
 {     
-     /*LAB3 EXERCISE 4: YOUR CODE*/ 
+    /*LAB3 EXERCISE 4: YOUR CODE*/ 
      // 初始化pra_list_head为空链表
      // 初始化当前指针curr_ptr指向pra_list_head，表示当前页面替换位置为链表头
      // 将mm的私有成员指针指向pra_list_head，用于后续的页面替换算法操作
@@ -43,7 +43,7 @@ _clock_init_mm(struct mm_struct *mm)
     mm->sm_priv = &pra_list_head;
 
      //cprintf(" mm->sm_priv %x in fifo_init_mm\n",mm->sm_priv);
-     return 0;
+    return 0;
 }
 /*
  * (3)_fifo_map_swappable: According FIFO PRA, we should link the most recent arrival page at the back of pra_list_head qeueue
@@ -52,7 +52,7 @@ static int
 _clock_map_swappable(struct mm_struct *mm, uintptr_t addr, struct Page *page, int swap_in)
 {
     list_entry_t *entry=&(page->pra_page_link);
- 
+
     assert(entry != NULL && curr_ptr != NULL);
     //record the page access situlation
     /*LAB3 EXERCISE 4: YOUR CODE*/ 
@@ -72,8 +72,8 @@ static int
 _clock_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tick)
 {
      list_entry_t *head=(list_entry_t*) mm->sm_priv;
-         assert(head != NULL);
-     assert(in_tick==0);
+        assert(head != NULL);
+    assert(in_tick==0);
      /* Select the victim */
      //(1)  unlink the  earliest arrival page in front of pra_list_head qeueue
      //(2)  set the addr of addr of this page to ptr_page

@@ -70,7 +70,7 @@ mm_create(void) {
         mm->pgdir = NULL;
         mm->map_count = 0;
 
-        if (swap_init_ok) swap_init_mm(mm);
+        if (swap_init_ok) swap_init_mm(mm);//页面置换的初始化
         else mm->sm_priv = NULL;
     }
     return mm;
@@ -91,6 +91,7 @@ vma_create(uintptr_t vm_start, uintptr_t vm_end, uint_t vm_flags) {
 
 
 // find_vma - find a vma  (vma->vm_start <= addr <= vma_vm_end)
+//如果返回NULL， 说明查询的虚拟地址不存在/不合法， 既不对应内存里的某个页， 也不对应硬盘里某个可以换进来的页
 struct vma_struct *
 find_vma(struct mm_struct *mm, uintptr_t addr) {
     struct vma_struct *vma = NULL;
@@ -98,7 +99,7 @@ find_vma(struct mm_struct *mm, uintptr_t addr) {
         vma = mm->mmap_cache;
         if (!(vma != NULL && vma->vm_start <= addr && vma->vm_end > addr)) {
                 bool found = 0;
-                list_entry_t *list = &(mm->mmap_list), *le = list;
+                list_entry_t *list = &(mm->mmap_list), *le = list;  
                 while ((le = list_next(le)) != list) {
                     vma = le2vma(le, list_link);
                     if (vma->vm_start<=addr && addr < vma->vm_end) {
@@ -123,7 +124,7 @@ static inline void
 check_vma_overlap(struct vma_struct *prev, struct vma_struct *next) {
     assert(prev->vm_start < prev->vm_end);
     assert(prev->vm_end <= next->vm_start);
-    assert(next->vm_start < next->vm_end);
+    assert(next->vm_start < next->vm_end);//next 是我们想插入的区间， 这里顺便检验了start < end
 }
 
 
@@ -134,15 +135,15 @@ insert_vma_struct(struct mm_struct *mm, struct vma_struct *vma) {
     list_entry_t *list = &(mm->mmap_list);
     list_entry_t *le_prev = list, *le_next;
 
-        list_entry_t *le = list;
-        while ((le = list_next(le)) != list) {
-            struct vma_struct *mmap_prev = le2vma(le, list_link);
-            if (mmap_prev->vm_start > vma->vm_start) {
-                break;
-            }
-            le_prev = le;
+    list_entry_t *le = list;
+    while ((le = list_next(le)) != list) {
+        struct vma_struct *mmap_prev = le2vma(le, list_link);
+        if (mmap_prev->vm_start > vma->vm_start) {
+            break;
         }
-
+        le_prev = le;
+    }
+    //保证插入后所有vma_struct按照区间左端点有序排列
     le_next = list_next(le_prev);
 
     /* check overlap */
@@ -242,7 +243,7 @@ check_vma_struct(void) {
     for (i =4; i>=0; i--) {
         struct vma_struct *vma_below_5= find_vma(mm,i);
         if (vma_below_5 != NULL ) {
-           cprintf("vma_below_5: i %x, start %x, end %x\n",i, vma_below_5->vm_start, vma_below_5->vm_end); 
+            cprintf("vma_below_5: i %x, start %x, end %x\n",i, vma_below_5->vm_start, vma_below_5->vm_end); 
         }
         assert(vma_below_5 == NULL);
     }
@@ -330,17 +331,18 @@ volatile unsigned int pgfault_num=0;
  */
 int
 do_pgfault(struct mm_struct *mm, uint_t error_code, uintptr_t addr) {
+    
     // pte_t* temp = NULL;
     // temp = get_pte(mm->pgdir, addr, 0);
     // if(temp != NULL && (*temp & (PTE_V | PTE_R))) {
     //     return lru_pgfault(mm, error_code, addr);
     // }
 
-
+    //addr: 访问出错的虚拟地址
     int ret = -E_INVAL;
     //try to find a vma which include addr
     struct vma_struct *vma = find_vma(mm, addr);
-
+    //在mm_struct里判断这个虚拟地址是否可用
     pgfault_num++;
     //If the addr is in the range of a mm's vma?
     if (vma == NULL || vma->vm_start > addr) {
@@ -360,7 +362,7 @@ do_pgfault(struct mm_struct *mm, uint_t error_code, uintptr_t addr) {
     }
     // perm &= ~PTE_R;
 
-    addr = ROUNDDOWN(addr, PGSIZE);
+    addr = ROUNDDOWN(addr, PGSIZE);//按照页面大小把地址对齐
 
     ret = -E_NO_MEM;
 

@@ -32,8 +32,8 @@ static int
 _lru_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tick)
 {
      list_entry_t *head=(list_entry_t*) mm->sm_priv;
-         assert(head != NULL);
-     assert(in_tick==0);
+        assert(head != NULL);
+    assert(in_tick==0);
     list_entry_t* entry = list_prev(head);
     if (entry != head) {
         list_del(entry);
@@ -153,12 +153,12 @@ int lru_pgfault(struct mm_struct *mm, uint_t error_code, uintptr_t addr) {
 
 struct swap_manager swap_manager_lru =
 {
-     .name            = "lru swap manager",
-     .init            = &_lru_init,
-     .init_mm         = &_lru_init_mm,
-     .tick_event      = &_lru_tick_event,
-     .map_swappable   = &_lru_map_swappable,
-     .set_unswappable = &_lru_set_unswappable,
-     .swap_out_victim = &_lru_swap_out_victim,
-     .check_swap      = &_lru_check_swap,
+    .name            = "lru swap manager",
+    .init            = &_lru_init,
+    .init_mm         = &_lru_init_mm,
+    .tick_event      = &_lru_tick_event,
+    .map_swappable   = &_lru_map_swappable,
+    .set_unswappable = &_lru_set_unswappable,
+    .swap_out_victim = &_lru_swap_out_victim,
+    .check_swap      = &_lru_check_swap,
 };
