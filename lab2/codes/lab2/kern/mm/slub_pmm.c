@@ -1,247 +1,187 @@
-#include <pmm.h>
+#include <defs.h>
 #include <list.h>
-#include <string.h>
+#include <memlayout.h>
+#include <assert.h>
 #include <slub_pmm.h>
+#include <pmm.h>
 #include <stdio.h>
-#include <buddy_system_pmm.h>
-#include <mmu.h>
 
-// #define KMALLOC_MAX_CACHE_SIZE 2 * PGSIZE
+struct slob_block {
+	int units;
+	struct slob_block *next;
+};
+typedef struct slob_block slob_t;
 
-// struct PageList {
-//     list_entry_t page_list;
-//     unsigned int nr_page;
-// } pageList;
+#define SLOB_UNIT sizeof(slob_t)
+#define SLOB_UNITS(size) (((size) + SLOB_UNIT - 1)/SLOB_UNIT)
 
-// #define page_list (pageList.page_list)
-// #define nr_page (pageList.nr_page)
+struct bigblock {
+	int order;
+	void *pages;
+	struct bigblock *next;
+};
+typedef struct bigblock bigblock_t;
 
-// struct MiniPage {
-//     unsigned int page_shift;
-//     unsigned int page_size;
-//     list_entry_t mini_page_list;
-// };
+static slob_t arena = { .next = &arena, .units = 1 };
+static slob_t *slobfree = &arena;
+static bigblock_t *bigblocks;
 
-// static void
-// slub_init(void) {
-//     list_init(&page_list);
-//     nr_page = 0;
-//     buddy_system_pmm_manager.init();
-// }
+static void slob_free(void *b, int size);
 
-// static void
-// slub_init_memmap(struct Page *base, size_t n) {
-//     buddy_system_pmm_manager.init_memmap(base,n);
-// }
+static void *slob_alloc(size_t size)
+{
+    assert(size < PGSIZE);
 
-// static struct Page *
-// slub_alloc_pages(size_t n) {
-//     assert(n > 0);
-//     if (n > nr_free) {
-//         return NULL;
-//     }
-//     struct Page *page = NULL;
-//     list_entry_t *le = &free_list;
-//     while ((le = list_next(le)) != &free_list) {
-//         struct Page *p = le2page(le, page_link);
-//         if (p->property >= n) {
-//             page = p;
-//             break;
-//         }
-//     }
-//     if (page != NULL) {
-//         list_entry_t* prev = list_prev(&(page->page_link));
-//         list_del(&(page->page_link));
-//         if (page->property > n) {
-//             struct Page *p = page + n;
-//             p->property = page->property - n;
-//             SetPageProperty(p);
-//             list_add(prev, &(p->page_link));
-//         }
-//         nr_free -= n;
-//         ClearPageProperty(page);
-//     }
-//     return page;
-// }
+	slob_t *prev, *cur;
+	int  units = SLOB_UNITS(size);
 
-// static void
-// slub_free_pages(struct Page *base, size_t n) {
-//     assert(n > 0);
-//     struct Page *p = base;
-//     for (; p != base + n; p ++) {
-//         assert(!PageReserved(p) && !PageProperty(p));
-//         p->flags = 0;
-//         set_page_ref(p, 0);
-//     }
-//     base->property = n;
-//     SetPageProperty(base);
-//     nr_free += n;
+	prev = slobfree;
+	for (cur = prev->next; ; prev = cur, cur = cur->next) {
+		if (cur->units >= units) {
 
-//     if (list_empty(&free_list)) {
-//         list_add(&free_list, &(base->page_link));
-//     } else {
-//         list_entry_t* le = &free_list;
-//         while ((le = list_next(le)) != &free_list) {
-//             struct Page* page = le2page(le, page_link);
-//             if (base < page) {
-//                 list_add_before(le, &(base->page_link));
-//                 break;
-//             } else if (list_next(le) == &free_list) {
-//                 list_add(le, &(base->page_link));
-//             }
-//         }
-//     }
+			if (cur->units == units)
+				prev->next = cur->next;
+			else {
+				prev->next = cur + units;
+				prev->next->units = cur->units - units;
+				prev->next->next = cur->next;
+				cur->units = units;
+			}
+			slobfree = prev;
+			return cur;
+		}
+		if (cur == slobfree) {
+			if (size == PGSIZE)
+				return 0;
+			cur = (slob_t *)alloc_pages(1);
+			if (!cur)
+				return 0;
+			slob_free(cur, PGSIZE);
+			cur = slobfree;
+		}
+	}
+}
 
-//     list_entry_t* le = list_prev(&(base->page_link));
-//     if (le != &free_list) {
-//         p = le2page(le, page_link);
-//         if (p + p->property == base) {
-//             p->property += base->property;
-//             ClearPageProperty(base);
-//             list_del(&(base->page_link));
-//             base = p;
-//         }
-//     }
+static void slob_free(void *block, int size)
+{
+	slob_t *cur, *b = (slob_t *)block;
+	if (!block)
+		return;
+	if (size)
+		b->units = SLOB_UNITS(size);
 
-//     le = list_next(&(base->page_link));
-//     if (le != &free_list) {
-//         p = le2page(le, page_link);
-//         if (base + base->property == p) {
-//             base->property += p->property;
-//             ClearPageProperty(p);
-//             list_del(&(p->page_link));
-//         }
-//     }
-// }
+	for (cur = slobfree; !(b > cur && b < cur->next); cur = cur->next)
+		if (cur >= cur->next && (b > cur || b < cur->next))
+			break;
 
-// static size_t
-// slub_nr_free_pages(void) {
-//     return nr_free;
-// }
+	if (b + b->units == cur->next) {
+		b->units += cur->next->units;
+		b->next = cur->next->next;
+	} else
+		b->next = cur->next;
 
-// static void
-// basic_check(void) {
-//     struct Page *p0, *p1, *p2;
-//     p0 = p1 = p2 = NULL;
-//     assert((p0 = alloc_page()) != NULL);
-//     assert((p1 = alloc_page()) != NULL);
-//     assert((p2 = alloc_page()) != NULL);
+	if (cur + cur->units == b) {
+		cur->units += b->units;
+		cur->next = b->next;
+	} else
+		cur->next = b;
 
-//     assert(p0 != p1 && p0 != p2 && p1 != p2);
-//     assert(page_ref(p0) == 0 && page_ref(p1) == 0 && page_ref(p2) == 0);
+	slobfree = cur;
+}
 
-//     assert(page2pa(p0) < npage * PGSIZE);
-//     assert(page2pa(p1) < npage * PGSIZE);
-//     assert(page2pa(p2) < npage * PGSIZE);
+void 
+slub_init(void) {
+    cprintf("slub_init() succeeded!\n");
+}
 
-//     list_entry_t free_list_store = free_list;
-//     list_init(&free_list);
-//     assert(list_empty(&free_list));
+void *slub_alloc(size_t size)
+{
+	slob_t *m;
+	bigblock_t *bb;
 
-//     unsigned int nr_free_store = nr_free;
-//     nr_free = 0;
+	if (size < PGSIZE - SLOB_UNIT) {
+		m = slob_alloc(size + SLOB_UNIT);
+		return m ? (void *)(m + 1) : 0;
+	}
 
-//     assert(alloc_page() == NULL);
+	bb = slob_alloc(sizeof(bigblock_t));
+	if (!bb)
+		return 0;
 
-//     free_page(p0);
-//     free_page(p1);
-//     free_page(p2);
-//     assert(nr_free == 3);
+	bb->order = ((size-1) >> PGSHIFT) + 1;
+	bb->pages = (void *)alloc_pages(bb->order);
 
-//     assert((p0 = alloc_page()) != NULL);
-//     assert((p1 = alloc_page()) != NULL);
-//     assert((p2 = alloc_page()) != NULL);
+	if (bb->pages) {
+		bb->next = bigblocks;
+		bigblocks = bb;
+		return bb->pages;
+	}
 
-//     assert(alloc_page() == NULL);
+	slob_free(bb, sizeof(bigblock_t));
+	return 0;
+}
 
-//     free_page(p0);
-//     assert(!list_empty(&free_list));
 
-//     struct Page *p;
-//     assert((p = alloc_page()) == p0);
-//     assert(alloc_page() == NULL);
+void slub_free(void *block)
+{
+	bigblock_t *bb, **last = &bigblocks;
 
-//     assert(nr_free == 0);
-//     free_list = free_list_store;
-//     nr_free = nr_free_store;
+	if (!block)
+		return;
 
-//     free_page(p);
-//     free_page(p1);
-//     free_page(p2);
-// }
+	if (!((unsigned long)block & (PGSIZE-1))) {
+		for (bb = bigblocks; bb; last = &bb->next, bb = bb->next) {
+			if (bb->pages == block) {
+				*last = bb->next;
+				free_pages((struct Page *)block, bb->order);
+				slob_free(bb, sizeof(bigblock_t));
+				return;
+			}
+		}
+	}
 
-// // LAB2: below code is used to check the first fit allocation algorithm
-// // NOTICE: You SHOULD NOT CHANGE basic_check, default_check functions!
-// static void
-// slub_check(void) {
-//     int count = 0, total = 0;
-//     list_entry_t *le = &free_list;
-//     while ((le = list_next(le)) != &free_list) {
-//         struct Page *p = le2page(le, page_link);
-//         assert(PageProperty(p));
-//         count ++, total += p->property;
-//     }
-//     assert(total == nr_free_pages());
+	slob_free((slob_t *)block - 1, 0);
+	return;
+}
 
-//     basic_check();
+unsigned int slub_size(const void *block)
+{
+	bigblock_t *bb;
+	unsigned long flags;
 
-//     struct Page *p0 = alloc_pages(5), *p1, *p2;
-//     assert(p0 != NULL);
-//     assert(!PageProperty(p0));
+	if (!block)
+		return 0;
 
-//     list_entry_t free_list_store = free_list;
-//     list_init(&free_list);
-//     assert(list_empty(&free_list));
-//     assert(alloc_page() == NULL);
+	if (!((unsigned long)block & (PGSIZE-1))) {
+		for (bb = bigblocks; bb; bb = bb->next)
+			if (bb->pages == block) {
+				return bb->order << PGSHIFT;
+			}
+	}
 
-//     unsigned int nr_free_store = nr_free;
-//     nr_free = 0;
+	return ((slob_t *)block - 1)->units * SLOB_UNIT;
+}
 
-//     free_pages(p0 + 2, 3);
-//     assert(alloc_pages(4) == NULL);
-//     assert(PageProperty(p0 + 2) && p0[2].property == 3);
-//     assert((p1 = alloc_pages(3)) != NULL);
-//     assert(alloc_page() == NULL);
-//     assert(p0 + 2 == p1);
+int slobfree_len()
+{
+    int len = 0;
+    for(slob_t* curr = slobfree->next; curr != slobfree; curr = curr->next)
+        len ++;
+    return len;
+}
 
-//     p2 = p0 + 1;
-//     free_page(p0);
-//     free_pages(p1, 3);
-//     assert(PageProperty(p0) && p0->property == 1);
-//     assert(PageProperty(p1) && p1->property == 3);
-
-//     assert((p0 = alloc_page()) == p2 - 1);
-//     free_page(p0);
-//     assert((p0 = alloc_pages(2)) == p2 + 1);
-
-//     free_pages(p0, 2);
-//     free_page(p2);
-
-//     assert((p0 = alloc_pages(5)) != NULL);
-//     assert(alloc_page() == NULL);
-
-//     assert(nr_free == 0);
-//     nr_free = nr_free_store;
-
-//     free_list = free_list_store;
-//     free_pages(p0, 5);
-
-//     le = &free_list;
-//     while ((le = list_next(le)) != &free_list) {
-//         struct Page *p = le2page(le, page_link);
-//         count --, total -= p->property;
-//     }
-//     assert(count == 0);
-//     assert(total == 0);
-// }
-// //这个结构体在
-// const struct pmm_manager slub_pmm_manager = {
-//     .name = "slub_pmm_manager",
-//     .init = slub_init,
-//     .init_memmap = slub_init_memmap,
-//     .alloc_pages = slub_alloc_pages,
-//     .free_pages = slub_free_pages,
-//     .nr_free_pages = slub_nr_free_pages,
-//     .check = slub_check,
-// };
-
+void slub_check()
+{
+    cprintf("slub check begin\n");
+    cprintf("slobfree len: %d\n", slobfree_len());
+    void* p1 = slub_alloc(4096);
+    cprintf("slobfree len: %d\n", slobfree_len());
+    void* p2 = slub_alloc(2);
+    void* p3 = slub_alloc(2);
+    cprintf("slobfree len: %d\n", slobfree_len());
+    slub_free(p2);
+    cprintf("slobfree len: %d\n", slobfree_len());
+    slub_free(p3);
+    cprintf("slobfree len: %d\n", slobfree_len());
+    cprintf("slub check end\n");
+}
