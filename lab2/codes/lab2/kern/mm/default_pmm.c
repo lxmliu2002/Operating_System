@@ -64,14 +64,15 @@ default_init(void) {
     nr_free = 0;
 }
 
-static void
+static void//初始化一个空闲内存块，查询空闲内存块的链表，将新的空闲内存块插入到链表中按照地址从小到大的顺序，之后将空闲块的数量加n
 default_init_memmap(struct Page *base, size_t n) {
-    assert(n > 0);
+    assert(n > 0);//断言确保n大于0
     struct Page *p = base;
+    //初始化每个页面的属性
     for (; p != base + n; p ++) {
-        assert(PageReserved(p));
+        assert(PageReserved(p));//使用断言确保每个页面是保留
         p->flags = p->property = 0;
-        set_page_ref(p, 0);
+        set_page_ref(p, 0);//将页面引用计数设置为0
     }
     base->property = n;
     SetPageProperty(base);
@@ -108,16 +109,16 @@ default_alloc_pages(size_t n) {
         }
     }
     if (page != NULL) {
-        list_entry_t* prev = list_prev(&(page->page_link));
-        list_del(&(page->page_link));
+        list_entry_t* prev = list_prev(&(page->page_link));//找到page的前一个页面
+        list_del(&(page->page_link));//将page从链表中删除
         if (page->property > n) {
             struct Page *p = page + n;
             p->property = page->property - n;
             SetPageProperty(p);
-            list_add(prev, &(p->page_link));
+            list_add(prev, &(p->page_link));//将p插入到链表中
         }
         nr_free -= n;
-        ClearPageProperty(page);
+        ClearPageProperty(page);//将page的属性设置为非空闲
     }
     return page;
 }
@@ -126,13 +127,13 @@ static void
 default_free_pages(struct Page *base, size_t n) {
     assert(n > 0);
     struct Page *p = base;
-    for (; p != base + n; p ++) {
+    for (; p != base + n; p ++) {//将base到base+n的页面的属性设置为保留，引用计数设置为0
         assert(!PageReserved(p) && !PageProperty(p));
         p->flags = 0;
         set_page_ref(p, 0);
     }
     base->property = n;
-    SetPageProperty(base);
+    SetPageProperty(base);//将base的属性设置为空闲
     nr_free += n;
 
     if (list_empty(&free_list)) {
@@ -151,9 +152,9 @@ default_free_pages(struct Page *base, size_t n) {
     }
 
     list_entry_t* le = list_prev(&(base->page_link));
-    if (le != &free_list) {
+    if (le != &free_list) {//如果base不是第一个页面
         p = le2page(le, page_link);
-        if (p + p->property == base) {
+        if (p + p->property == base) {//如果p的下一个页面是base
             p->property += base->property;
             ClearPageProperty(base);
             list_del(&(base->page_link));
@@ -162,7 +163,7 @@ default_free_pages(struct Page *base, size_t n) {
     }
 
     le = list_next(&(base->page_link));
-    if (le != &free_list) {
+    if (le != &free_list) {//如果base不是最后一个页面
         p = le2page(le, page_link);
         if (base + base->property == p) {
             base->property += p->property;

@@ -7,8 +7,8 @@
 #include <stdio.h>
 
 struct slob_block {
-	int units;
-	struct slob_block *next;
+	int units;//块的大小
+	struct slob_block *next;//下一个slot块
 };
 typedef struct slob_block slob_t;
 

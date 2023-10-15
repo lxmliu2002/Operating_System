@@ -21,7 +21,7 @@ buddy_system_init(void) {
     
 }
 
-static void
+static void//从能存放最大内存块的链表开始，将要存放的物理内存放到链表中，若不能继续放入到这个链表中，则进行一步步降低能存放内存块大小的链表，
 buddy_system_init_memmap(struct Page *base, size_t n) {
     assert(n > 0);
     struct Page *p = base;
@@ -48,6 +48,7 @@ buddy_system_init_memmap(struct Page *base, size_t n) {
     }
 }
 
+//取出高一级的空闲链表中的一个块，将其分为两个较小的快，大小是order-1，加入到较低一级的链表中，注意nr_free数量的变化
 static void split_page(int order) {
     if(list_empty(&(free_list(order)))) {
         split_page(order + 1);
@@ -75,7 +76,7 @@ buddy_system_alloc_pages(size_t n) {
     }
     struct Page *page = NULL;
     uint32_t order = MAX_ORDER - 1;
-    while (n > (1 << order)) {
+    while (n < (1 << order)) {
         order -= 1;
     }
     order += 1;
@@ -93,7 +94,7 @@ buddy_system_alloc_pages(size_t n) {
     return page;
 }
 
-
+//先将块按照地址从小到大的顺序加入到指定序号的链表当中
 static void add_page(uint32_t order, struct Page* base) {
     if (list_empty(&(free_list(order)))) {
         list_add(&(free_list(order)), &(base->page_link));
@@ -112,14 +113,14 @@ static void add_page(uint32_t order, struct Page* base) {
 }
 
 static void merge_page(uint32_t order, struct Page* base) {
-    if (order == MAX_ORDER - 1) {
+    if (order == MAX_ORDER - 1) {//没有更大的内存块了，升不了级了
         return;
     }
     
     list_entry_t* le = list_prev(&(base->page_link));
     if (le != &(free_list(order))) {
         struct Page *p = le2page(le, page_link);
-        if (p + p->property == base) {
+        if (p + p->property == base) {//若是连续内存
             p->property += base->property;
             ClearPageProperty(base);
             list_del(&(base->page_link));
@@ -140,7 +141,7 @@ static void merge_page(uint32_t order, struct Page* base) {
             list_del(&(p->page_link));
             if(order != MAX_ORDER - 1) {
                 list_del(&(base->page_link));
-            add_page(order+1,base);
+                add_page(order+1,base);
             }
         }
     }
@@ -155,7 +156,7 @@ buddy_system_free_pages(struct Page *base, size_t n) {
     assert(n < (1 << (MAX_ORDER - 1)));
     struct Page *p = base;
     for (; p != base + n; p ++) {
-        assert(!PageReserved(p) && !PageProperty(p));
+        assert(!PageReserved(p) && !PageProperty(p));//确保页面没有被保留且没有属性标志
         p->flags = 0;
         set_page_ref(p, 0);
     }
@@ -164,7 +165,7 @@ buddy_system_free_pages(struct Page *base, size_t n) {
 
     uint32_t order = 0;
     size_t temp = n;
-    while (temp != 1) {
+    while (temp != 1) {//找到能将此内存块放入的链表序号，根据幂次方的大小对序号进行加法运算，直到确定序号
         temp >>= 1;
         order++;
     }
@@ -173,7 +174,7 @@ buddy_system_free_pages(struct Page *base, size_t n) {
 }
 
 static size_t
-buddy_system_nr_free_pages(void) {
+buddy_system_nr_free_pages(void) {//计算空闲页面的数量，空闲块*块大小（与链表序号有关）
     size_t num = 0;
     for(int i = 0; i < MAX_ORDER; i++) {
         num += nr_free(i) << i;
