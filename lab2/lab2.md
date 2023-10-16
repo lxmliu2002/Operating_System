@@ -341,7 +341,7 @@ static bigblock_t *bigblocks;						 // 大块链表，设计为单向链表
 在slub分配算法中，对于小内存的分配我们需要在其头部加上一个`slob_t`结构体，所以需要分两种情况讨论：
 
 + 如果待分配的大小没有超过`PGSIZE - SLOB_UNIT`，调用`slob_alloc`为其分配`size + SLOB_UNIT`大小的空间（因为要算上头部的`slob_t`）
-+ 如果超过了超过`PGSIZE - SLOB_UNIT`，调用`alloc_pages`为其分配一个大于且最接近这个大小的连续的若干页，并申请一个`bigblock_t`大小的空间管理该页面，将其加入到`bigblocks`链表中
++ 如果超过了`PGSIZE - SLOB_UNIT`，调用`alloc_pages`为其分配一个大于且最接近这个大小的连续的若干页，并申请一个`bigblock_t`大小的空间管理该页面，将其加入到`bigblocks`链表中
 
 ```c
 void *slub_alloc(size_t size)
