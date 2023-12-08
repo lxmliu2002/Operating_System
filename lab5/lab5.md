@@ -113,17 +113,17 @@ ret = page_insert(to, npage, start, perm);
 
 ### 生命周期图
 
-```
+```shell
                     +-------------+
                +--> |	 none 	  |
                |    +-------------+       ---+
                |          | alloc_proc	     |
-               |          V				    |
-               |    +-------------+			|
-               |    | PROC_UNINIT |			|---> do_fork
-               |    +-------------+			|
-      do_wait  |         | wakeup_proc		|
-               |         V				---+
+               |          V				     |
+               |    +-------------+			 |
+               |    | PROC_UNINIT |			 |---> do_fork
+               |    +-------------+			 |
+      do_wait  |         | wakeup_proc		 |
+               |         V			   	  ---+
                |    +-------------+    do_wait 	  	  +-------------+
                |    |PROC_RUNNABLE| <------------>    |PROC_SLEEPING|
                |    +-------------+    wake_up        +-------------+
