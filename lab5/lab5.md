@@ -6,24 +6,27 @@
 
   ```c
   proc->wait_state = 0;
-  proc->cptr = NULL;
-  proc->optr = NULL;
-  proc->yptr = NULL;
+  proc->cptr = NULL; // Child Pointer 表示当前进程的子进程
+  proc->optr = NULL; // Older Sibling Pointer 表示当前进程的上一个兄弟进程
+  proc->yptr = NULL; // Younger Sibling Pointer 表示当前进程的下一个兄弟进程
   ```
 
 + 在`do_fork`中修改代码如下：
 
   ```c
-  if((proc = alloc_proc()) == NULL) {
+  if((proc = alloc_proc()) == NULL)
+  {
       goto fork_out;
   }
   proc->parent = current; // 添加
   assert(current->wait_state == 0);
-  if(setup_kstack(proc) != 0) {
+  if(setup_kstack(proc) != 0)
+  {
       goto bad_fork_cleanup_proc;
   }
   ;
-  if(copy_mm(clone_flags, proc) != 0) {
+  if(copy_mm(clone_flags, proc) != 0)
+  {
       goto bad_fork_cleanup_kstack;
   }
   copy_thread(proc, stack, tf);
